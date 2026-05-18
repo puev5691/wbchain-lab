@@ -1,80 +1,110 @@
-# WBN/TERA2 node deployment bundle
+# WBN deployment bundle
 
 Кратко:
-этот каталог фиксирует восстановление фактического WBN/TERA2 deployment bundle (дистрибутива развёртывания) по существующей публичной ноде ЭРэФия.
+этот каталог содержит восстановленный deployment bundle (дистрибутив развёртывания) WBN/TERA2 shard cluster.
 
-Статус: recovery_skeleton, не final installer.
+Статус:
+working operational deployment bundle.
 
-## Что подтверждено аудитом ЭРэФии
+## Архитектура
 
-Подтверждённая нода:
+WBN строится как:
 
-- label: ЭРэФия
-- hostname: ruvds-ygo0w
-- public IP: 194.87.107.135
-- OS: Ubuntu 24.04.4 LTS
-- service: wbn-tera2-node.service
-- service status in audit: active/running
-- user: pev5691
-- working directory: /home/pev5691/wbn-tera2-lab/tera2/Source
-- command: /usr/bin/node run-node.js NOPSWD NOAUTOUPDATE
-- logs:
-  - /home/pev5691/wbn-tera2-lab/logs/wbn-tera2-node.out.log
-  - /home/pev5691/wbn-tera2-lab/logs/wbn-tera2-node.err.log
-- source origin: https://gitlab.com/terafoundation/tera2.git
-- source commit: 6cc2061c12986bbaea182786c42d89fd979eeb33
+- upstream tera2;
+- DATA/shard.js;
+- DATA/const.lst;
+- bootstrap peer graph;
+- START_NETWORK_DATE;
+- systemd runtime.
 
-Observed listeners:
+## Ключевой identity layer
 
-- 30000/tcp: WBN/TERA2 P2P
-- 8780/tcp: public web/wallet/API process
-- 8781/tcp: node/internal HTTP/API process
+Файл:
 
-Observed child processes:
+    DATA/shard.js
 
-- run-node.js NOPSWD NOAUTOUPDATE
-- ./process/web-process.js READONLYDB MODE:MAIN_JINN STARTNETWORK:1778186522932 PATH:../DATA/ HOSTING:8780 NOPSWD
-- ./process/tx-process.js READONLYDB MODE:MAIN_JINN STARTNETWORK:1778186522932 PATH:../DATA/ HOSTING:8780 NOPSWD
-- ./process/pow-process.js MODE:MAIN_JINN STARTNETWORK:1778186522932 PATH:../DATA/ HOSTING:8780 NOPSWD
+Ключевые параметры:
 
-## Что пока НЕ подтверждено
+- NETWORK = WELLBEING
+- SHARD_NAME = WBN
+- START_NETWORK_DATE = 1778186522932
+- SeedServerArr
 
-Нельзя считать финальным установщиком, пока не извлечены и очищены:
+## Bootstrap peer
 
-- DATA/config или аналогичный WBN runtime config;
-- параметры shard/network, если они задаются не только кодом;
-- способ первичной настройки STARTNETWORK=1778186522932;
-- способ задания SHARD_NAME=WBN / NETWORK=WELLBEING, если они не встроены в исходники;
-- bootstrap peers;
-- mining mode;
-- wallet/private-key boundary;
-- различия между ЭРэФией и Буржуинией.
+Текущий bootstrap peer:
 
-## Правило дальнейших установок
+    185.39.19.240:30000
 
-Дальнейшие установки должны идти через этот GitHub-каталог только после того, как:
+## Порты
 
-1. снят дополнительный sanitized runtime audit с ЭРэФии;
-2. снят аналогичный audit с Буржуинии;
-3. подтверждён общий deployment contour;
-4. создан final installer;
-5. installer проверен на чистой ноде.
+- 30000/tcp — JINN P2P
+- 8780/tcp — wallet/web UI
+- 8781/tcp — internal/API layer
+
+## Что нельзя публиковать
+
+Никогда не публиковать:
+
+- DATA/WALLET/*
+- DB/*
+- BlockChain/*
+- private keys
+- wallet config
+- runtime secrets
+
+## Deployment flow
+
+1. Prepare Ubuntu host.
+2. Install nodejs/npm.
+3. Clone tera2.
+4. Checkout confirmed commit.
+5. Apply WBN identity layer.
+6. Configure const.lst.
+7. Install systemd service.
+8. Open ports.
+9. Start node.
+10. Verify peer sync.
+
+## Проверка
+
+Открыть:
+
+    http://IP:8780/
+
+API:
+
+    http://IP:8780/GetCurrentInfo
+
+Проверить:
+
+- NETWORK = WELLBEING
+- SHARD_NAME = WBN
+- block height
+- peers
+- sync progress
+
+## Что уже подтверждено
+
+Подтверждено:
+
+- clean third-node deployment;
+- WBN identity sync;
+- peer graph connectivity;
+- operational reproducibility;
+- GUI/web wallet on 8780;
+- mining runtime startup;
+- public API response through 8780.
 
 ## Структура каталога
 
-- docs/recovery-errefiya-audit-summary.md — что восстановлено из архива ЭРэФии.
-- systemd/wbn-tera2-node.service.template — шаблон systemd-службы по факту ЭРэФии.
-- install/install-wbn-node-recovery-skeleton.sh — осторожный каркас установки, не финальный production installer.
-- verify/verify-wbn-node.sh — проверочный скрипт состояния ноды.
-
-## Stop-condition
-
-Если отсутствует подтверждённый WBN runtime config, установка должна останавливаться до развертывания service.
-
-Нельзя делать вид, что официальный upstream TERA2 сам по себе уже является WBN-шардом, если WBN-параметры задавались отдельными файлами или ручной настройкой.
+- configs/shard.js — shard identity layer.
+- configs/const.template.lst — sanitized runtime config template.
+- systemd/wbn-tera2-node.service — systemd service.
+- install/install-third-node.sh — deployment installer.
 
 ## Служебный хвост
 
 КТО: ШАРДОВИК / ChatGPT
-ДЛЯ ЧЕГО: начать перенос фактического WBN/TERA2 deployment contour в GitHub
-СТАТУС: recovery_skeleton
+ДЛЯ ЧЕГО: canonical WBN deployment bundle after successful third-node deployment
+СТАТУС: working
