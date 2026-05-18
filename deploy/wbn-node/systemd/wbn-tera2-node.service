@@ -1,0 +1,17 @@
+[Unit]
+Description=WBN TERA2 Node
+After=network.target
+
+[Service]
+Type=simple
+User=pev5691
+WorkingDirectory=/home/pev5691/wbn-tera2-lab/tera2/Source
+ExecStart=/usr/bin/node run-node.js NOPSWD NOAUTOUPDATE
+Restart=always
+RestartSec=10
+
+StandardOutput=append:/home/pev5691/wbn-tera2-lab/logs/wbn-tera2-node.out.log
+StandardError=append:/home/pev5691/wbn-tera2-lab/logs/wbn-tera2-node.err.log
+
+[Install]
+WantedBy=multi-user.target
